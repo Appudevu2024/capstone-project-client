@@ -3,15 +3,14 @@
 import { Outlet } from 'react-router-dom';
 import DashboardHeader from '../components/shared/DashboardHeader';
  
- function Adminlayout() {
+ function DoctorLayout() {
    return (
      <div>
-       <DashboardHeader/>
-       <Outlet/>
-      
+        <DashboardHeader/>
+        <Outlet/>
      </div>
    )
  }
  
- export default Adminlayout
+ export default DoctorLayout
  

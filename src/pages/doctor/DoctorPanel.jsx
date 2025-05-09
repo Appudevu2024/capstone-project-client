@@ -1,57 +1,105 @@
- import React from 'react'
- 
- function DoctorPanel() {
-   return (
-    <div className="min-h-screen flex bg-gray-100">
-    {/* Sidebar */}
-    <aside className="w-64 bg-blue-800 text-white p-5 hidden md:block">
-      <h2 className="text-2xl font-bold mb-8">Admin Panel</h2>
-      <ul className="space-y-4">
-        <li><a href="#" className="hover:underline">Patient Registration</a></li>
-        <li><a href="#" className="hover:underline">Appointment Schedules</a></li>
-        <li><a href="#" className="hover:underline">General Instructions</a></li>
-        <li><a href="#" className="hover:underline">Progress Evaluation</a></li>
-      </ul>
-    </aside>
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { ThemeContext } from '../../context/ThemeContext';
+import BloodBankData from '../shared/BloodBankData';
+import Patients from '../shared/Patients';
+import StatsCards from '../../components/AdminDashboard/StatsCards';
+import { adminLogout } from '../../services/loginServices';
+import { clearAdmin } from '../../redux/features/adminSlice';
+import { persistor } from '../../redux/store';
+import { LayoutDashboard, Users, Droplet, LogOut } from 'lucide-react';
 
-    {/* Main Section */}
-    <div className="flex-1 flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow p-4 flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Dashboard Overview</h1>
-        <nav className="space-x-4">
-          <a href="#" className="text-blue-600 hover:underline">Home</a>
-          <a href="#" className="text-blue-600 hover:underline">Patients</a>
-          <a href="#" className="text-blue-600 hover:underline">Doctors</a>
-          <a href="#" className="text-blue-600 hover:underline">Appointments</a>
-          <a href="#" className="text-blue-600 hover:underline">Settings</a>
-        </nav>
-      </header>
+export default function DoctorPanel() {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'dashboard';
+  const [activeTab, setActiveTab] = useState(initialTab);
 
-      {/* Content */}
-      <main className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded shadow">
-          <h3 className="text-lg font-semibold">Total Patients</h3>
-          <p className="text-2xl font-bold text-blue-700">128</p>
-        </div>
-        <div className="bg-white p-6 rounded shadow">
-          <h3 className="text-lg font-semibold">Upcoming Appointments</h3>
-          <p className="text-2xl font-bold text-green-600">26</p>
-        </div>
-        <div className="bg-white p-6 rounded shadow">
-          <h3 className="text-lg font-semibold">Notifications</h3>
-          <p className="text-2xl font-bold text-red-500">4</p>
-        </div>
-        <div className="bg-white p-6 rounded shadow col-span-1 md:col-span-2 lg:col-span-1">
-          <h3 className="text-lg font-semibold">Blood Bank Info</h3>
-          <p className="text-sm">Click below to view latest blood stock availability.</p>
-          <button className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">View Blood Bank</button>
-        </div>
-      </main>
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { theme } = useContext(ThemeContext);
+
+  const adminData = useSelector((state) => state.admin?.admin);
+
+  const handleLogout = async () => {
+    try {
+      if (adminData?.email) {
+        await adminLogout();
+        dispatch(clearAdmin());
+      }
+      await persistor.purge();
+      navigate('/');
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
+    navigate(`?tab=${tabName}`);
+    if (tabName === 'logout') handleLogout();
+  };
+
+  return (
+    <div className={`flex min-h-screen ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-base-200'}`}>
+      {/* Sidebar */}
+      <aside className="w-64 bg-white dark:bg-gray-800 p-4 shadow-md">
+        <ul className="menu space-y-2">
+          <li>
+            <button
+              onClick={() => handleTabChange('dashboard')}
+              className={`btn btn-block w-full justify-start gap-2 ${activeTab === 'dashboard' ? 'bg-[#0967C2] text-white' : 'btn-ghost'}`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              Dashboard
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleTabChange('patients')}
+              className={`btn btn-block w-full justify-start gap-2 ${activeTab === 'patients' ? 'bg-[#0967C2] text-white' : 'btn-ghost'}`}
+            >
+              <Users className="w-5 h-5" />
+              Patients
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleTabChange('bloodbank')}
+              className={`btn btn-block w-full justify-start gap-2 ${activeTab === 'bloodbank' ? 'bg-[#0967C2] text-white' : 'btn-ghost'}`}
+            >
+              <Droplet className="w-5 h-5" />
+              Bloodbank
+            </button>
+          </li>
+          <li>
+            <button
+              onClick={() => handleTabChange('logout')}
+              className={`btn btn-block w-full justify-start gap-2 ${activeTab === 'logout' ? 'bg-[#0967C2] text-white' : 'btn-ghost'}`}
+            >
+              <LogOut className="w-5 h-5" />
+              Logout
+            </button>
+          </li>
+        </ul>
+      </aside>
+
+      {/* Main Content */}
+      <div className='dark:bg-gray-800 text-gray flex-1'>
+        <main className="p-6">
+          {activeTab === 'dashboard' && (
+            <>
+              <StatsCards />
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white ml-4 mt-8 border-b pb-2">
+                Overview
+              </h2>
+              {/* You can add dashboard summary widgets here if needed */}
+            </>
+          )}
+          {activeTab === 'patients' && <Patients />}
+          {activeTab === 'bloodbank' && <BloodBankData />}
+        </main>
+      </div>
     </div>
-  </div>
-   )
- }
- 
- export default DoctorPanel
- 
+  );
+}
