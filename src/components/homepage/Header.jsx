@@ -10,36 +10,29 @@ function Header() {
   const navigate = useNavigate();
 
   return (
-    <header className="bg-base-100 text-base-content shadow-md dark:bg-gray-900 dark:text-white">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        {/* Logo */}
+    <header className="bg-white dark:bg-gray-900 shadow-md w-full">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap md:flex-nowrap items-center justify-between gap-4">
+        
+        {/* Logo and Brand */}
         <Link to="/" className="flex items-center space-x-2">
           <img src={logo} alt="Hospital Logo" className="h-10 w-10 object-cover rounded-full" />
-          <span className="text-2xl font-bold">HealthCare</span>
+          <span className="text-xl md:text-2xl font-bold text-blue-700 dark:text-white">HealthCare</span>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="space-x-6 hidden md:flex">
-          <Link to="/" className="hover:underline">Home</Link>
-          <Link to="/about" className="hover:underline">About</Link>
-          <Link to="/" className="hover:underline">Services</Link>
-          <Link to="/" className="hover:underline">Doctors</Link>
-          <Link to="/" className="hover:underline">Contact Us</Link>
-        </nav>
-
-        {/* Right Actions */}
-        <div className="flex items-center gap-4">
+         {/* Right Actions */}
+        <div className="flex items-center gap-3 ml-auto">
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="btn btn-sm btn-outline border-white text-white hover:bg-white hover:text-blue-700 dark:border-gray-300 dark:hover:bg-gray-700"
+            className="text-lg p-2 border rounded-full border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            title="Toggle Theme"
           >
             {theme === "light" ? "🌙" : "☀️"}
           </button>
 
           {/* Login Button */}
           <button
-            className="btn bg-blue-700 text-white dark:bg-gray-800 dark:text-white dark:border-gray-600 w-32 rounded-full hover:bg-blue-800"
+            className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-full transition dark:bg-gray-700 dark:hover:bg-gray-600"
             onClick={() => setShowLogin(true)}
           >
             Get Started

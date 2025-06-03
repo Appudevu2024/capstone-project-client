@@ -7,7 +7,7 @@ import { Outlet } from 'react-router-dom';
     <div>
        <Header/>
        <Outlet/>
-       <Footer/>
+        <Footer/> 
      </div>
    )
  }

@@ -28,9 +28,9 @@ export const doctorDetails = async (id) => {
   }
 }
 
-export const doctorUpdation = async (formData) => {
+export const updateDoctor = async (doctorId, formData) => {
   try {
-    const res = await axiosInstance.put('/doctor/updateDoctor', formData, {
+    const res = await axiosInstance.put(`/doctor/updateDoctor/${doctorId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       },
@@ -211,6 +211,17 @@ export const deleteAppointment = async (id) => {
     throw err;
   }
 };
+
+export const getAppointmentById = async (id) => {
+  try {
+    const res = await axiosInstance.get(`/admin/appointments/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching appointment by ID:", error);
+    throw error;
+  }
+};
+
 
 export const getAllPatients = async () => {
   try {

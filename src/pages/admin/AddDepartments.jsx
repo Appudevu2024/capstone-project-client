@@ -1,21 +1,19 @@
-import React, { useState,useContext, useEffect } from 'react'
-import { addDepartment,updateDepartment } from '../../services/adminServices';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react';
+import { addDepartment, updateDepartment } from '../../services/adminServices';
 import { toast } from 'react-toastify';
 import { ThemeContext } from '../../context/ThemeContext';
+import { X } from 'lucide-react';
 
+function AddDepartments({ departmentToEdit, onSuccess, onCancel }) {
+  const theme = useContext(ThemeContext);
 
-function AddDepartments({departmentToEdit, onSuccess, onCancel }) {
-
- const theme  = useContext(ThemeContext);
   const [values, setValues] = useState({
     name: '',
-    description: ''
-  })
+    description: '',
+  });
 
   useEffect(() => {
     if (departmentToEdit) {
-      console.log(departmentToEdit)
       setValues({
         _id: departmentToEdit._id,
         name: departmentToEdit.name,
@@ -24,11 +22,9 @@ function AddDepartments({departmentToEdit, onSuccess, onCancel }) {
     }
   }, [departmentToEdit]);
 
-
-
   const onSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       if (departmentToEdit) {
         await updateDepartment(values);
@@ -38,74 +34,85 @@ function AddDepartments({departmentToEdit, onSuccess, onCancel }) {
         console.log("Department added:", result);
         toast.success('Saved successfully');
       }
-  
-      setValues({
-        name: '',
-        description: ''
-      });
-  
+
+      setValues({ name: '', description: '' });
+
       if (onSuccess) onSuccess();
       if (onCancel) onCancel();
-  
-      // navigate('/adminpanel?tab=departments');
     } catch (err) {
       console.error(err);
-      toast.error('Action failed. Please try again.', {
-        position: 'top-center'
-      });
+      toast.error('Action failed. Please try again.', { position: 'top-center' });
     }
   };
 
   return (
-    
-<div className={`hero ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-base-200'}`}>
+    <div className="w-full flex justify-center px-4">
+      <div className="card w-full max-w-xl shadow-xl dark:bg-gray-800 dark:text-white relative p-6">
 
-      <div className="hero-content flex-col lg:flex-row-reverse">
-      
-        
-        <div className="card shrink-0 w-full max-w-md  shadow-2xl  card-body ">
-        <h2 className="text-2xl font-bold text-center mb-2">Department Info</h2>
-        <div className="h-1 bg-[#0967C2] my-2 w-[250px]  mx-auto"></div>
-       
-          {/* <form className="card-body"> */}
-          <div className="form-control">
-          
-              <div>
-             
-                <label className="label">
-                  <span className="label-text">Name</span>
-                </label>
-                <input type="text" name='name' placeholder="name of Dept." className="input input-bordered w-full" value={values.name || ''} required    onChange={(e) => {
-                  setValues({ ...values, [e.target.name]: e.target.value })
-                }} />
-              </div>
-
-              <div>
-                <label className="label">
-                  <span className="label-text">Description</span>
-                </label>
-                <textarea rows={3}  placeholder="Dept. description" name='description' className="textarea textarea-bordered  max-w-lg" value={values.description || ''} required   onChange={(e) => {
-                  setValues({ ...values, [e.target.name]: e.target.value })
-                }} />
-              </div>
-           
-          </div>
-
-          <div className="form-control text-center">
-            <button className="btn w-full bg-[#0967C2] text-white" onClick={onSubmit}>
-              {departmentToEdit ? 'Update  ' : 'Save'}
-
-            </button>
-          </div>
-
-
-          {/* </form> */}
-
+        {/* Header with Close button aligned to the right */}
+        <div className="flex justify-between items-center text-center mb-4">
+          <h2 className="text-2xl font-bold ">
+            Department {departmentToEdit ? 'Updation' : 'Creation'}
+          </h2>
+          <button
+            onClick={onCancel}
+            className="p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-600"
+            title="Close"
+          >
+            <X size={20} className="text-red-600 dark:text-white" />
+          </button>
         </div>
 
+        <div className="h-1 bg-[#0967C2] my-2 w-48 mx-auto rounded"></div>
+
+        {/* Form */}
+        <form onSubmit={onSubmit} className="space-y-4 mt-6">
+          <div>
+            <label className="block mb-1 text-sm font-medium">Name</label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Name of Dept."
+              required
+              value={values.name}
+              onChange={(e) => {
+                const { name, value } = e.target;
+                const onlyLetters = value.replace(/[0-9]/g, '');
+                setValues((prev) => ({ ...prev, [name]: onlyLetters }));
+              }}
+              className="w-full px-4 py-2 border rounded-md bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0967C2]"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm font-medium">Description</label>
+            <textarea
+              name="description"
+              rows={3}
+              required
+              placeholder="Dept. description"
+              value={values.description}
+              onChange={(e) => {
+                const { name, value } = e.target;
+                const onlyLetters = value.replace(/[0-9]/g, '');
+                setValues((prev) => ({ ...prev, [name]: onlyLetters }));
+              }}
+              className="w-full px-4 py-2 border rounded-md bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0967C2]"
+            ></textarea>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              className="w-full py-2 px-4 bg-[#0967C2] hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              {departmentToEdit ? 'Update' : 'Save'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  )
+  );
 }
 
-export default AddDepartments
+export default AddDepartments;

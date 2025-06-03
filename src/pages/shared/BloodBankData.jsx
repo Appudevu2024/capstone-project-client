@@ -4,6 +4,7 @@ import { listBloodBank,deleteBloodgroup } from '../../services/adminServices';
 import AddBloodGroup from '../admin/AddBloodGroup';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import ConfirmDeleteModal from '../../components/modals/ConfirmDeleteModal';
 
 export default function BloodBankData() {
   const [bloodbank, setBloodbank] = useState([]);
@@ -11,30 +12,43 @@ export default function BloodBankData() {
   const [showForm, setShowForm] = useState(false);
   const [selectedBloodGroup, setSelectedBloodGroup] = useState(null);
   const navigate = useNavigate();
-
-
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+   const [viewingBloodbank, setViewingBloodbank] = useState(null);
+    const [showViewModal, setShowViewModal] = useState(false);
+    
   const handleEdit = (bloodgroup) => {
     setSelectedBloodGroup(bloodgroup);
     setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this blood group?')) {
-      try {
-        await deleteBloodgroup(id);
-        toast.success('Deleted')
-        fetchBloodBank();
-      } catch (error) {
-        console.error('Delete error:', error);
-      }
+ 
+const openDeleteModal = (id) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteId(null);
+    setShowDeleteModal(false);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteBloodgroup(deleteId);
+      toast.success('Bloodgroup deleted');
+      fetchBloodBank();
+    } catch (error) {
+      console.error('Deletion error:', error);
+    } finally {
+      closeDeleteModal();
     }
   };
 
-  const handleView = (bloodgroup) => {
-    alert(`Blood Group: ${bloodgroup.bloodgroup}\nAvailable Bags: ${bloodgroup.noofbagsavailable}`);
+   const handleView = (bloodgroup) => {
+    setViewingBloodbank(bloodgroup);
+    setShowViewModal(true);
   };
-
 
   useEffect(() => {
     fetchBloodBank();
@@ -60,45 +74,44 @@ export default function BloodBankData() {
 
   return (
     <div className="p-4 dark:bg-gray-800 text-gray">
-      <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-lg font-semibold">
-          BloodBank &gt;
-          {!showForm && (
-            <span
-              className="text-blue-600 cursor-pointer"
-              onClick={() => {
-                setSelectedBloodGroup(null);
-                setShowForm(true);
-              }}
-            >
-              {/* {' '} */}
-              Add New
-            </span>
-          )}
-          {showForm && (
-            <span
-              className="text-gray-500 cursor-pointer"
-              onClick={() => setShowForm(false)}
-            >
-              {/* {' '} */}
-              <span className="underline">Back to List</span>
-            </span>
-          )}
-        </h2>
-        {!showForm && (
-            <input
-              type="text"
-              placeholder="Search by blood group"
-              className="input input-bordered w-72"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            )}
-      </div>
+    <div className="mb-4 flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+  <div className="flex flex-wrap items-center gap-2">
+    <h2 className="text-lg font-semibold">
+      BloodBank
+    </h2>
+    {!showForm ? (
+      <span
+        className="text-blue-600 text-sm cursor-pointer"
+        onClick={() => {
+          setSelectedBloodGroup(null);
+          setShowForm(true);
+        }}
+      >
+        Add New
+      </span>
+    ) : (
+      <span
+        className="text-gray-500 text-sm cursor-pointer"
+        onClick={() => setShowForm(false)}
+      >
+        <span className="underline">Back to List</span>
+      </span>
+    )}
+  </div>
+
+  {!showForm && (
+    <input
+      type="text"
+      placeholder="Search by blood group"
+      className="input input-bordered w-full sm:w-72 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+  )}
+</div>
 
       {showForm ? (
-        
-        <AddBloodGroup
+       <AddBloodGroup
         bloodGroupToEdit={selectedBloodGroup}
           onCancel={() => {
             setShowForm(false)
@@ -106,14 +119,10 @@ export default function BloodBankData() {
           }}
           onSuccess=      
             {fetchBloodBank}
-        
-         
-        />
+         />
       ) : (
         <>
-         
-
-          <div className="overflow-x-auto dark:bg-gray-800 text-gray">
+         <div className="overflow-x-auto dark:bg-gray-800 text-gray">
             <table className="table-lg dark:bg-gray-800">
               <thead className="bg-[#0967C2] text-white dark:bg-gray-800 text-gray-800 dark:text-white">
                 <tr>
@@ -145,7 +154,7 @@ export default function BloodBankData() {
                         </button>
                         <button
                           className="btn btn-sm btn-ghost text-red-500 hover:bg-red-100 dark:hover:bg-red-900"
-                          onClick={() => handleDelete(bloodgroup._id)}
+                          onClick={() => openDeleteModal(bloodgroup._id)}
                         >
                           <Trash size={18} />
                         </button>
@@ -164,6 +173,34 @@ export default function BloodBankData() {
           </div>
         </>
       )}
+      {showViewModal && viewingBloodbank && (
+              <dialog id="BloodbankViewModal" className="modal modal-open">
+                <div className="modal-box dark:bg-gray-800 dark:text-white">
+                  <h3 className="font-bold text-lg text-[#0967C2]  mb-4">Bloodbank Data</h3>
+                  <div className="space-y-2">
+                    <p><strong>Bloodgroup:</strong> {viewingBloodbank.bloodgroup}</p>
+                    <p><strong>No of Bags available:</strong> {viewingBloodbank.noofbagsavailable}</p>
+                  </div>
+                  <div className="modal-action">
+                    <button
+                      className="btn bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 w-full sm:w-auto"
+                      onClick={() => {
+                        setShowViewModal(false);
+                        setViewingBloodbank(null);
+                      }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </dialog>
+            )}
+      
+            <ConfirmDeleteModal
+              isOpen={showDeleteModal}
+              onCancel={closeDeleteModal}
+              onConfirm={confirmDelete}
+            />
     </div>
   );
 }

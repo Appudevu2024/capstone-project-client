@@ -83,7 +83,7 @@ export const createStaff = async (staffData) => {
 
   export const getAllPatients = async () => {
     try {
-      const res = await axiosInstance.get('/staff/patients');
+      const res = await axiosInstance.get('/staff/patients/by-staff');
       console.log('Patients :', res.data);
   
       if (res.data && Array.isArray(res.data.patients)) {

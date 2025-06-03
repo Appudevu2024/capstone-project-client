@@ -3,14 +3,18 @@ import React, { useEffect, useState } from 'react';
 import { Eye, Pencil, Trash } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { listAppointments, deleteAppointment } from '../../services/adminServices';
-import CreateAppointment from './CreateAppointment';
+import { useNavigate } from 'react-router-dom';
+import AppointmentModal from '../../components/modals/AppointmentModal';
+import ConfirmDeleteModal from '../../components/modals/ConfirmDeleteModal';
 
-export default function Appointments({ isDashboard = false }) {
-
+export default function Appointments({ isDashboard = false, onAddNew, onEdit }) {
   const [appointments, setAppointments] = useState([]);
   const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  const navigate = useNavigate();
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
     fetchAppointments();
@@ -18,182 +22,173 @@ export default function Appointments({ isDashboard = false }) {
 
   const fetchAppointments = () => {
     listAppointments()
-      .then((res) => {
-        console.log('Fetched appointments:', res);
-        setAppointments(res || []);
-        console.log(res);
-
-      })
+      .then((res) => { const sorted= (res || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    setAppointments(sorted);
+  })
       .catch((err) => {
-        console.error('Error fetching departments:', err);
+        console.error('Error fetching appointments:', err);
         setAppointments([]);
       });
-
-    }
-
-
-  const handleEdit = (appointments) => {
-    setSelectedAppointment(appointments);
-    setShowForm(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this appointment?')) {
-      try {
-        await deleteAppointment(id);
-        toast.success('Deleted')
-        fetchAppointments();
-      } catch (error) {
-        console.error('Deletion error:', error);
-      }
+  const handleEdit = (appointment) => {
+    if (typeof onEdit === 'function') {
+      onEdit(appointment);
+    }
+  };
+  const handleAddNew = () => {
+    if (typeof onAddNew === 'function') {
+      onAddNew();
+    }
+  };
+
+
+
+  const openDeleteModal = (id) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteId(null);
+    setShowDeleteModal(false);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteAppointment(deleteId);
+      toast.success('Appointment deleted');
+      fetchAppointments();
+    } catch (error) {
+      console.error('Deletion error:', error);
+    } finally {
+      closeDeleteModal();
     }
   };
 
   const handleView = (appointment) => {
-    alert(`Patient: ${appointment.patientname}\nDOB: ${appointment.dateOfBirth}\nContact: ${appointment.contact}\nDoctor: ${appointment.doctor.name}\nDate: ${new Date(appointment.date).toLocaleDateString()}\nTime: ${appointment.time}\nStatus: ${appointment.status}`);
+    setSelectedAppointment(appointment);
+    setIsModalOpen(true);
   };
 
-
-
-
-  const filteredAppointments = appointments.filter(
-    (appointment) =>
-      appointment.doctor.name.toLowerCase().includes(search.toLowerCase()) ||
-      appointment.patientname.toLowerCase().includes(search.toLowerCase())
+  const filteredAppointments = appointments.filter((appointment) =>
+    appointment.doctor?.name?.toLowerCase().includes(search.toLowerCase()) ||
+    appointment.patientname.toLowerCase().includes(search.toLowerCase())
   );
 
- 
-
   return (
-
-    <div className="p-4 dark:bg-gray-800 text-gray">
-       {!isDashboard && (
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">
-          Appointments &gt;
-          {!showForm && (
+    <div className="p-4 dark:bg-gray-800 min-h-screen">
+      {!isDashboard && (
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
+          <h2 className="text-xl font-semibold dark:text-white">
+            Appointments &nbsp;&nbsp;
             <span
-              className="text-blue-600 cursor-pointer"
-              onClick={() => {
-                setSelectedAppointment(null);
-                setShowForm(true);
-              }}
+              className="text-blue-600  text-sm hover:underline cursor-pointer ml-1"
+              onClick={handleAddNew}
             >
               Add New
             </span>
-          )}
-
-          {showForm && (
-            <span
-              className="text-gray-500 cursor-pointer"
-              onClick={() => setShowForm(false)}
-            >
-              {/* {' '} */}
-              <span className="underline">Back to List</span>
-            </span>
-          )}
-        </h2>
-        {!showForm && (
+          </h2>
           <input
             type="text"
-            placeholder="Search by patient"
-            className="input input-bordered w-72"
+            placeholder="Search by patient or doctor"
+            className="input input-bordered w-full md:w-72 dark:bg-gray-700 dark:text-white"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        )}
-      </div>
-       )}
-      {showForm  && !isDashboard ? (
-
-        <CreateAppointment
-          appointmentToEdit={selectedAppointment}
-          onCancel={() => {
-            setShowForm(false)
-            fetchAppointments();
-          }}
-          onSuccess=
-          {fetchAppointments}
-
-
-        />
-      ) : (
-        <>
-          <div className="overflow-x-auto dark:bg-gray-800 text-gray">
-            <table className="table-lg dark:bg-gray-800">
-              <thead className="bg-[#0967C2] text-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                <tr>
-                  <th>#</th>
-                  <th>Patient</th>
-                  <th>DOB</th>
-                  <th>Contact</th>
-                  <th>Doctor</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody >
-                {filteredAppointments.length > 0 ? (
-                  filteredAppointments.map((appointment, idx) => (
-                    <tr key={appointment._id}>
-                      <td>{idx + 1}</td>
-                      <td>{appointment.patientname}</td>
-
-                      <td> {new Date(appointment.dateOfBirth)
-                        .toLocaleDateString('en-GB', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                        })}</td>
-
-                      <td>{appointment.contact}</td>
-                      <td>{appointment.doctor?.name || 'Unknown'}</td>
-
-                      <td> {new Date(appointment.date)
-                        .toLocaleDateString('en-GB', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                        })}</td>
-
-                      <td> {(() => {
-                        const [hourStr, minute] = appointment.time.split(":");
-                        let hour = parseInt(hourStr, 10);
-                        const suffix = hour >= 12 ? "PM" : "AM";
-                        hour = hour % 12 || 12;
-                        return `${hour}:${minute} ${suffix}`;
-                      })()}</td>
-
-                      <td>{appointment.status}</td>
-                      <td className="flex gap-2">
-                        <button className="btn btn-xs btn-ghost text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900" onClick={() => handleView(appointment)}>
-                          <Eye size={16} />
-                        </button>
-                        <button className="btn btn-sm btn-ghost text-green-500 hover:bg-green-100 dark:hover:bg-green-900" onClick={() => handleEdit(appointment)}>
-                          <Pencil size={16} />
-                        </button>
-                        <button className="btn btn-sm btn-ghost text-red-500 hover:bg-red-100 dark:hover:bg-red-900" onClick={() => handleDelete(appointment._id)} >
-                          {/* onClick={() => handleDelete(appt._id)} */}
-                          <Trash size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8" className="text-center">No appointments found</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
+        </div>
       )}
+ 
+    <div className="overflow-x-auto rounded-lg shadow-sm bg-white dark:bg-gray-800">
+  <table className="min-w-full text-sm text-left table-auto sm:table-fixed">
+    <thead className="bg-[#0967C2] dark:bg-gray-700 text-white">
+      <tr>
+        <th className="px-2 py-3">#</th>
+        <th className="px-2 py-3">Patient Name</th>
+        <th className="px-2 py-3">DOB</th>
+        <th className="px-2 py-3">Contact</th>
+        <th className="px-2 py-3">Doctor</th>
+        <th className="px-2 py-3">Date</th>
+        <th className="px-2 py-3">Time</th>
+        <th className="px-2 py-3">Status</th>
+        <th className="px-2 py-3 text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody className="bg-white dark:bg-gray-800 dark:text-white">
+      {filteredAppointments.length > 0 ? (
+        filteredAppointments.map((appointment, idx) => (
+          <tr key={appointment._id} className="hover:bg-gray-100 dark:hover:bg-gray-700">
+            <td className="px-2 py-2">{idx + 1}</td>
+            <td className="px-2 py-2 whitespace-nowrap">{appointment.patientname}</td>
+            <td className="px-2 py-2 whitespace-nowrap">
+              {new Date(appointment.dateOfBirth).toLocaleDateString('en-GB')}
+            </td>
+            <td className="px-2 py-2 whitespace-nowrap">{appointment.contact}</td>
+            <td className="px-2 py-2 whitespace-nowrap">{appointment.doctor?.name || 'Unknown'}</td>
+            <td className="px-2 py-2 whitespace-nowrap">
+              {new Date(appointment.date).toLocaleDateString('en-GB')}
+            </td>
+            <td className="px-2 py-2 whitespace-nowrap">
+              {(() => {
+                const [hourStr, minute] = appointment.time.split(':');
+                let hour = parseInt(hourStr, 10);
+                const suffix = hour >= 12 ? 'PM' : 'AM';
+                hour = hour % 12 || 12;
+                return `${hour}:${minute} ${suffix}`;
+              })()}
+            </td>
+            <td className="px-2 py-2">{appointment.status}</td>
+            <td className="px-2 py-2">
+              <div className="flex justify-center gap-2 ">
+                <button
+                  className="btn btn-sm btn-circle btn-ghost text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900"
+                  onClick={() => handleView(appointment)}
+                  title="View"
+                >
+                  <Eye size={16} />
+                </button>
+                {!isDashboard && (
+                  <button
+                    className="btn btn-sm btn-circle btn-ghost text-green-500 hover:bg-green-100 dark:hover:bg-green-900"
+                    onClick={() => handleEdit(appointment)}
+                    title="Edit"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                )}
+                <button
+                  className="btn btn-sm btn-circle btn-ghost text-red-500 hover:bg-red-100 dark:hover:bg-red-900"
+                  onClick={() => openDeleteModal(appointment._id)}
+                  title="Delete"
+                >
+                  <Trash size={16} />
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td colSpan="9" className="text-center py-4 dark:text-gray-300">
+            No appointments found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+      <AppointmentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        appointment={selectedAppointment}
+      />
+      <ConfirmDeleteModal
+        isOpen={showDeleteModal}
+        onCancel={closeDeleteModal}
+        onConfirm={confirmDelete}
+      />
     </div>
 
   );
 }
-
-
